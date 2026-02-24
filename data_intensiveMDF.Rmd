@@ -1,0 +1,247 @@
+---
+title: "Data_intens_MD"
+author: "Arielle King"
+date: "2026-02-18"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r, include=FALSE}
+
+
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+```
+
+##Research Question
+How do institutional characteristics (research level, MSI status, college, and department) shape the types of data‑intensive academic programs available to students, and how can these differences inform students’ decisions about program fit?
+
+###R1 vs R2 by programs
+```{r}
+library(dplyr)
+
+di_prgs_filt_R1R2 %>%
+  count(research_level) %>%
+  arrange(desc(n)) %>%
+  bind_rows(
+    summarise(., research_level = "Total", n = sum(n))
+  )
+```
+
+
+```{r}
+# library(dplyr)
+# library(readr)
+# 
+# di_prgs_filt <- read_csv("DI_degreegrant_program.csv")
+
+```
+
+
+
+##Institution breakdown R1 vs R2
+```{r}
+library(dplyr)
+
+# di_prgs_filt_R1R2 %>%
+#   filter(research_level %in% c("R1", "R2")) %>%
+#   distinct(institution_name, research_level) %>%
+#   count(research_level)
+
+library(dplyr)
+
+counts <- di_prgs_filt_R1R2 %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  distinct(institution_name, research_level) %>%
+  count(research_level)
+
+counts %>%
+  bind_rows(
+    tibble(
+      research_level = "Total",
+      n = sum(counts$n)
+    )
+  )
+
+```
+R1 vs R2 (programs)
+
+```{r}
+library(dplyr)
+
+# Count R1 vs R2
+di_prgs_filt_R1R2 %>%
+  count(research_level)
+
+
+```
+
+### Institution Count MSI vs non-MSI
+```{r}
+
+library(dplyr)
+
+di_prgs_filt_R1R2 %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  distinct(institution_name, MSI_id) %>%
+  count(MSI_id)
+
+library(dplyr)
+
+counts <- di_prgs_filt_R1R2 %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  distinct(institution_name, MSI_id) %>%
+  count(MSI_id)
+
+counts %>%
+  add_row(MSI_id = "Total", n = sum(counts$n))
+
+```
+
+
+
+```{r}
+# Count by College
+library(dplyr)
+
+# Count number of programs by research level
+di_prgs_filt%>%
+  count(research_level, name = "program_count")
+```
+
+
+
+# Count by Department
+```{r}
+di_prgs_filt %>%
+  count(department)
+
+
+
+
+```
+
+# Count by Degree Level
+
+```{r}
+di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  count(research_level, degree_level)
+```
+```{r}
+di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  count(research_level, department_class) %>%
+  arrange(research_level, desc(n))
+```
+
+```{r}
+di_prgs_filt %>%
+  count(MSI_id, department_class) %>%
+  arrange(MSI_id, desc(n))
+```
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>%   # <-- filter here
+  count(research_level, department_class) %>%
+  ggplot(aes(x = department_class, y = n, fill = research_level)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Distribution of Department Categories by Research Level (R1 & R2 Only)",
+    x = "Department Category",
+    y = "Number of Programs",
+    fill = "Research Level"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r}
+library(tidyr)
+
+di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>% 
+  count(research_level, department_class) %>%
+  pivot_wider(
+    names_from = department_class,
+    values_from = n,
+    values_fill = 0
+  )
+```
+
+
+```{r}
+library(dplyr)
+install.packages("treemap")
+library(treemap)
+
+tree_data <- di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  count(research_level, department_class, name = "n")
+
+treemap(
+  tree_data,
+  index = c("research_level", "department_class"),
+  vSize = "n",
+  title = "Department Breakdown by Research Level",
+  palette = "Set3",
+  border.col = "white"
+)
+```
+
+```{r}
+library(dplyr)
+library(plotly)
+
+sun_data <- di_prgs_filt %>%
+  filter(research_level %in% c("R1", "R2")) %>%
+  count(research_level, department_class, name = "n") %>%
+  mutate(
+    ids     = paste(research_level, department_class, sep = " - "),
+    labels  = department_class,
+    parents = research_level
+  )
+
+plot_ly(
+  data = sun_data,
+  type = "sunburst",
+  ids = ~ids,
+  labels = ~labels,
+  parents = ~parents,
+  values = ~n,
+  branchvalues = "total"
+)
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
